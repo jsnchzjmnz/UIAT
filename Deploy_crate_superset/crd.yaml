@@ -1,0 +1,803 @@
+# CrateDB Kubernetes Operator
+# Copyright (C) 2020 Crate.IO GmbH
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+#apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: sndls.cloud.sndl.io
+spec:
+  group: cloud.sndl.io
+  names:
+    kind: Sndl
+    listKind: SndlList
+    plural: sndls
+    singular: sndl
+  preserveUnknownFields: false
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            crate:
+              properties:
+                backups:
+                  properties:
+                    aws:
+                      properties:
+                        accessKeyId:
+                          properties:
+                            secretKeyRef:
+                              properties:
+                                key:
+                                  description: The key within the Kubernetes Secret that holds the AWS Access Key ID.
+                                  type: string
+                                name:
+                                  description: Name of a Kubernetes Secret that contains the AWS Access Key ID to be used for backups.
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              type: object
+                          required:
+                          - secretKeyRef
+                          type: object
+                        basePath:
+                          description: The base path within the backup under which the snapshots will be placed.
+                          type: string
+                        bucket:
+                          properties:
+                            secretKeyRef:
+                              properties:
+                                key:
+                                  description: The key within the Kubernetes Secret that holds the AWS S3 bucket name.
+                                  type: string
+                                name:
+                                  description: Name of a Kubernetes Secret that contains the AWS S3 bucket name to be used for backups.
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              type: object
+                          required:
+                          - secretKeyRef
+                          type: object
+                        cron:
+                          description: A crontab formatted string indicating when and how often to perform backups.
+                          pattern: ^(((\d+,)+\d+|(\d+(\/|-)\d+)|\d+|\*) ){4}(((\d+,)+\d+|(\d+(\/|-)\d+)|\d+|\*))$
+                          type: string
+                        region:
+                          properties:
+                            secretKeyRef:
+                              properties:
+                                key:
+                                  description: The key within the Kubernetes Secret that holds the name of the AWS region to use.
+                                  type: string
+                                name:
+                                  description: Name of a Kubernetes Secret that contains the AWS region to be used for backups.
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              type: object
+                          required:
+                          - secretKeyRef
+                          type: object
+                        secretAccessKey:
+                          properties:
+                            secretKeyRef:
+                              properties:
+                                key:
+                                  description: The key within the Kubernetes Secret that holds the AWS Secret Access Key.
+                                  type: string
+                                name:
+                                  description: Name of a Kubernetes Secret that contains the AWS Secret Access Key to be used for backups.
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              type: object
+                          required:
+                          - secretKeyRef
+                          type: object
+                      required:
+                      - accessKeyId
+                      - bucket
+                      - cron
+                      - region
+                      - secretAccessKey
+                      type: object
+                  type: object
+                cluster:
+                  properties:
+                    externalDNS:
+                      description: The external DNS name record that should point to the CrateDB cluster.
+                      type: string
+                    imageRegistry:
+                      description: Point to a Docker registry. For the offical image it's 'crate', testing and nightly releases are under 'crate/crate'. Or others under 'https://example.com/path/to/registry'
+                      type: string
+                    license:
+                      properties:
+                        secretKeyRef:
+                          properties:
+                            key:
+                              description: The key within the Kubernetes Secret that holds the CrateDB license.
+                              type: string
+                            name:
+                              description: Name of a Kubernetes Secret that contains a valid CrateDB license.
+                              type: string
+                          required:
+                          - key
+                          - name
+                          type: object
+                      required:
+                      - secretKeyRef
+                      type: object
+                    name:
+                      description: Name of the cluster
+                      pattern: ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$
+                      type: string
+                    settings:
+                      description: Additional settings to apply to all nodes in the cluster.
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    ssl:
+                      properties:
+                        keystore:
+                          properties:
+                            secretKeyRef:
+                              properties:
+                                key:
+                                  description: CrateDB SSL keystore
+                                  type: string
+                                name:
+                                  description: Keystore name
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              type: object
+                          required:
+                          - secretKeyRef
+                          type: object
+                        keystoreKeyPassword:
+                          properties:
+                            secretKeyRef:
+                              properties:
+                                key:
+                                  description: Keystore key password
+                                  type: string
+                                name:
+                                  description: Keystore passwords
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              type: object
+                          required:
+                          - secretKeyRef
+                          type: object
+                        keystorePassword:
+                          properties:
+                            secretKeyRef:
+                              properties:
+                                key:
+                                  description: Keystore password
+                                  type: string
+                                name:
+                                  description: Keystore passwords
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              type: object
+                          required:
+                          - secretKeyRef
+                          type: object
+                      required:
+                      - keystore
+                      - keystoreKeyPassword
+                      - keystorePassword
+                      type: object
+                    version:
+                      description: CrateDB version
+                      type: string
+                  required:
+                  - imageRegistry
+                  - name
+                  - version
+                  type: object
+                nodes:
+                  properties:
+                    data:
+                      items:
+                        properties:
+                          annotations:
+                            description: Additional annotations to put on the corresponding pods.
+                            type: object
+                            x-kubernetes-preserve-unknown-fields: true
+                          labels:
+                            description: Additional labels to put on the corresponding pods.
+                            type: object
+                            x-kubernetes-preserve-unknown-fields: true
+                          name:
+                            description: Uniquely identifying name of this type of node.
+                            pattern: ^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$
+                            type: string
+                          replicas:
+                            description: Number of CrateDB nodes of this type.
+                            minimum: 1
+                            type: number
+                          resources:
+                            properties:
+                              cpus:
+                                description: Requested and limited CPUs for each CrateDB container. Supports the syntax documented in https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/.
+                                type: number
+                              disk:
+                                properties:
+                                  count:
+                                    description: Number of disks
+                                    type: number
+                                  size:
+                                    description: Size of the disk.
+                                    type: string
+                                  storageClass:
+                                    description: The name of a Kubernetes StorageClass
+                                    type: string
+                                required:
+                                - count
+                                - size
+                                - storageClass
+                                type: object
+                              heapRatio:
+                                description: Allocated heap size relative to memory
+                                format: float
+                                type: number
+                              memory:
+                                description: Requested and limited memory for each CrateDB container. Supports the syntax documented in https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/.
+                                type: string
+                            required:
+                            - cpus
+                            - disk
+                            - heapRatio
+                            - memory
+                            type: object
+                          settings:
+                            description: Additional settings to apply to all nodes of that type in the cluster.
+                            type: object
+                            x-kubernetes-preserve-unknown-fields: true
+                        required:
+                        - name
+                        - replicas
+                        - resources
+                        type: object
+                      minItems: 1
+                      type: array
+                    master:
+                      properties:
+                        annotations:
+                          description: Additional annotations to put on the corresponding pods.
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
+                        labels:
+                          description: Additional labels to put on the corresponding pods.
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
+                        replicas:
+                          description: Number of master nodes. Should be an odd number.
+                          minimum: 3
+                          type: number
+                        resources:
+                          properties:
+                            cpus:
+                              description: Requested and limited CPUs for each CrateDB container. Supports the syntax documented in https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/.
+                              type: number
+                            disk:
+                              properties:
+                                count:
+                                  description: Number of disks
+                                  type: number
+                                size:
+                                  description: Size of the disk.
+                                  type: string
+                                storageClass:
+                                  description: The name of a Kubernetes StorageClass
+                                  type: string
+                              required:
+                              - count
+                              - size
+                              - storageClass
+                              type: object
+                            heapRatio:
+                              description: Allocated heap size relative to memory
+                              format: float
+                              type: number
+                            memory:
+                              description: Requested and limited memory for each CrateDB container. Supports the syntax documented in https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/.
+                              type: string
+                          required:
+                          - cpus
+                          - disk
+                          - heapRatio
+                          - memory
+                          type: object
+                        settings:
+                          description: Additional settings to apply to all master nodes in the cluster.
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
+                      required:
+                      - replicas
+                      - resources
+                      type: object
+                  required:
+                  - data
+                  type: object
+                ports:
+                  properties:
+                    http:
+                      description: HTTP port number
+                      maximum: 65535
+                      minimum: 1
+                      type: number
+                    postgres:
+                      description: PostgreSQL port number
+                      maximum: 65535
+                      minimum: 1
+                      type: number
+                  required:
+                  - http
+                  - postgres
+                  type: object
+                users:
+                  items:
+                    properties:
+                      name:
+                        description: The username for a CrateDB cluster user.
+                        type: string
+                      password:
+                        properties:
+                          secretKeyRef:
+                            properties:
+                              key:
+                                description: The key within the Kubernetes Secret that holds the user's password.
+                                type: string
+                              name:
+                                description: Name of a Kubernetes Secret that contains the password for the user.
+                                type: string
+                            required:
+                            - key
+                            - name
+                            type: object
+                        required:
+                        - secretKeyRef
+                        type: object
+                    required:
+                    - name
+                    - password
+                    type: object
+                  type: array
+              required:
+              - cluster
+              - nodes
+              type: object
+            superset:
+              properties:
+                name:
+                  description: Name of Superset
+                  pattern: ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$
+                  type: string
+                chartRepository:
+                  description: Repository of the Superset Helm Chart
+                  type: string
+                chartVersion:
+                  description: Version of the Superset Helm Chart
+                  type: string
+                values:
+                  properties:
+                    image:
+                      properties:
+                        repository:
+                          description: Repository for Superset DockerImage
+                          type: string
+                        tag:
+                          description: Tag of Superset DockerImage
+                          type: string
+                        pullPolicy:
+                          description: Pull Policy for Superset DockerImage
+                          type: string
+                      type: object
+                    service:
+                      properties:
+                        type:
+                          description: Type of service for superset
+                          type: string
+                        port:
+                          description: Superset port number
+                          maximum: 65535
+                          minimum: 1
+                          type: number
+                      type: object
+                  type: object
+              type: object
+            redis:
+              properties:
+                name:
+                  description: Name of redis
+                  pattern: ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$
+                  type: string
+                chartRepository:
+                  description: Repository of the redis Helm Chart
+                  type: string
+                chartVersion:
+                  description: Version of the redis Helm Chart
+                  type: string
+                values:
+                  properties:
+                    master:
+                      properties:
+                        service:
+                          properties:
+                            type:
+                              description: Type of service for redis
+                              type: string
+                            port:
+                              description: Redis port number
+                              maximum: 65535
+                              minimum: 1
+                              type: number
+                          type: object
+                        resources:
+                          properties:
+                            requests:
+                              properties:
+                                memory:
+                                  description: memory size for redis
+                                  type: string
+                                cpu:
+                                  description: cpu size for redis
+                                  type: string
+                              type: object
+                          type: object
+                      type: object
+                  type: object        
+              required:
+              - name
+              - chartRepository
+              - chartVersion
+              type: object
+            keycloak:
+              properties:
+                name:
+                  description: Name of keycloak
+                  pattern: ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$
+                  type: string
+                chartRepository:
+                  description: Repository of the keycloak Helm Chart
+                  type: string
+                chartVersion:
+                  description: Version of the keycloak Helm Chart
+                  type: string
+                values:
+                  properties:
+                    readinessProbe:
+                      properties:
+                        enabled:
+                          description: Enable readinessProbe
+                          type: boolean
+                        httpGet:
+                          properties:
+                            path:
+                              description: Path for readinessProbe
+                              type: string
+                            port:
+                              description: Port for readinessProbe
+                              type: string
+                          type: object
+                        initialDelaySeconds:
+                          description: Initial delay seconds for readinessProbe
+                          type: number
+                        periodSeconds:
+                          description: Period seconds for readinessProbe
+                          type: number
+                        timeoutSeconds:
+                          description: Timeout seconds for readinessProbe
+                          type: number
+                        failureThreshold:
+                          description: Failure threshold for readinessProbe
+                          type: number
+                        successThreshold:
+                          description: Success threshold for readinessProbe
+                          type: number
+                      type: object
+                    livenessProbe:
+                      properties:
+                        enabled:
+                          description: Enable liveness probe
+                          type: boolean
+                        httpGet:
+                          properties:
+                            path:
+                              description: Path for liveness probe
+                              type: string
+                            port:
+                              description: Port for liveness probe
+                              type: string
+                          type: object
+                        initialDelaySeconds:
+                          description: Initial delay seconds for livenessProbe
+                          type: number
+                        periodSeconds:
+                          description: Period seconds for livenessProbe
+                          type: number
+                        timeoutSeconds:
+                          description: Timeout seconds for livenessProbe
+                          type: number
+                        failureThreshold:
+                          description: Failure threshold for livenessProbe
+                          type: number
+                        successThreshold:
+                          description: Success threshold for livenessProbe
+                          type: number
+                      type: object
+                    auth:
+                      properties:
+                        createAdminUser:
+                          description: Create Administrator User On Boot
+                          type: boolean
+                        adminUser:
+                          description: Keycloak Administrator User
+                          type: string
+                        adminPassword:
+                          description: Keycloak Administrator Password
+                          type: string
+                        managementUser:
+                          description: Keycloak Management User
+                          type: string
+                        managementPassword: 
+                          description: Keycloak Management Password
+                          type: string
+                      type: object
+                    containerPorts:
+                      properties:
+                        http:
+                          description: keycloak http port number
+                          maximum: 65535
+                          minimum: 1
+                          type: number
+                        https:
+                          description: keycloak https port number
+                          maximum: 65535
+                          minimum: 1
+                          type: number
+                      type: object
+                    commonLabels:
+                      properties:
+                        app.kubernetes.io/component:
+                          description: component Label for Keycloak
+                          type: string
+                        app.kubernetes.io/managed-by:
+                          description: managed-by Label for Keycloak
+                          type: string
+                        app.kubernetes.io/name:
+                          description: name Label for Keycloak
+                          type: string
+                        app.kubernetes.io/part-of:
+                          description: part-of Label for Keycloak
+                          type: string
+                      type: object  
+                      
+                    resources:
+                      properties:
+                        requests:
+                          properties:
+                            memory:
+                              description: memory size for redis
+                              type: string
+                            cpu:
+                              description: cpu size for redis
+                              type: string
+                          type: object
+                      type: object
+                    service:
+                      properties:
+                        type:
+                          description: Type of service for keycloak
+                          type: string
+                        port:
+                          description: keycloak port number
+                          maximum: 65535
+                          minimum: 1
+                          type: number
+                        httpsPort:
+                          description: keycloak https port number
+                          maximum: 65535
+                          minimum: 1
+                          type: number
+                      type: object
+                    ingress:
+                      properties:
+                        enabled:
+                          description: Set to true to enable ingress record generation
+                          type: boolean
+                        certManager:
+                          description: Set true to add annotations for cert-manager
+                          type: string
+                        hostname:
+                          description: host pointing to this if ingres is enabled
+                          type: string
+                        path:
+                          description: Ingress path
+                          type: string
+                        pathType:
+                          description: Ingress path type
+                          type: string  
+                      type: object
+                    rbac:
+                      properties:
+                        create:
+                          description: Specifies whether RBAC resources should be created
+                          type: boolean
+                      type: object
+                    serviceAccount:
+                      properties:
+                        create:
+                          description: Specifies whether ServiceAccount resources should be created
+                          type: boolean
+                        name:
+                          description: The name of the Service Account to use
+                          type: string
+                      type: object
+                    postgresql:
+                      properties:
+                        enabled:
+                          description: To use an external database set this to false
+                          type: boolean
+                        postgresqlUsername:
+                          description: PostgreSQL username
+                          type: string
+                        postgresqlPassword:
+                          description: PostgreSQL password
+                          type: string
+                        postgresqlDatabase:
+                          description: PostgreSQL database
+                          type: string
+                        persistence:
+                          properties:
+                            enabled:
+                              description: PostgreSQL data Persistent Volume Storage Class
+                              type: string
+                          type: object
+                      type: object
+                    externalDatabase:
+                      properties:
+                        user:
+                          description: Database user
+                          type: string
+                        password:
+                          description: Database password
+                          type: string
+                        database:
+                          description: Database name
+                          type: string
+                        host:
+                          description: Database host
+                          type: string
+                        port:
+                          description: Database port
+                          maximum: 65535
+                          minimum: 1
+                          type: number
+                        data:
+                          properties:
+                            KEYCLOAK_DATABASE_PASSWORD:
+                              description: Keycloak Database Password
+                              type: string
+                            KEYCLOAK_DATABASE_HOST:
+                              description: Keycloak Database Host
+                              type: string
+                            KEYCLOAK_DATABASE_PORT:
+                              description: Keycloak Database Port
+                              maximum: 65535
+                              minimum: 1
+                              type: number
+                            KEYCLOAK_DATABASE_NAME:
+                              description: Keycloak Database Name
+                              type: string
+                            KEYCLOAK_DATABASE_USER:
+                              description: Keycloak Database User
+                              type: string
+                          type: object
+                      type: object
+                  type: object
+              required:
+              - name
+              - chartRepository
+              - chartVersion
+              type: object
+            postgres:
+              properties:
+                imageRegistry:
+                  description: Point to a Docker registry.
+                  type: string
+                name:
+                  description: Name of postgres
+                  pattern: ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$
+                  type: string
+                version:
+                  description: Postgres version
+                  type: string
+                imagePullPolicy:
+                  description: Image Pull Policy for Postgres
+                  type: string
+                port:
+                  description: Postgres port number
+                  maximum: 65535
+                  minimum: 1
+                  type: number
+                replicas:
+                  description: Number of Postgres replicas.
+                  minimum: 1
+                  type: number
+                databases:
+                  properties:
+                    user:
+                      description: User for Postgres
+                      type: string
+                    password:
+                      description: Password for Postgres
+                      type: string
+                    superset_database:
+                      description: Database name for Superset
+                      type: string
+                    keycloak_database:
+                      description: Database name for keycloak_database
+                      type: string
+                  required:
+                  - user
+                  - password
+                  type: object
+                persistence:
+                  properties:
+                    storageClassName:
+                      description: StorageClassName for Postgres
+                      type: string
+                    size:
+                      description: size of volume for Postgres
+                      type: string
+                  required:
+                  - storageClassName
+                  - size
+                  type: object
+              required:
+              - imageRegistry
+              - name
+              - version
+              - port
+              - replicas
+              type: object
+          type: object
+        status:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+      required:
+      - spec
+      type: object
+  versions:
+  - name: v1
+    served: true
+    storage: true

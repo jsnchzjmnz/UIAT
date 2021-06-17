@@ -1,0 +1,35 @@
+apiVersion: cloud.sndl.io/v1
+kind: Sndl
+metadata:
+  name: sndl
+spec:
+  crate:
+    cluster:
+      imageRegistry: crate
+      name: crate
+      version: 4.5.0
+    nodes:
+      data:
+      - name: default
+        replicas: 2
+        resources:
+          cpus: 0.5
+          disk:
+            count: 1
+            size: 1GiB
+            storageClass: default
+          heapRatio: 0.5
+          memory: 1GiB
+
+  superset:
+    name: sndlsuperset
+    chartVersion: 0.1.0
+    chartRepository: file:///etc/cloud/charts/
+    values:
+      image:
+        repository: aymaru/superset
+        tag: 1.1.0
+        pullPolicy: IfNotPresent
+
+
+
